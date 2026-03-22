@@ -7,12 +7,16 @@ import requests
 app = FastAPI()
 
 # Получаем API ключи из переменных окружения
-openai.api_key = os.getenv("OPENAI_API_KEY")  # Устанавливаем ключ OpenAI из переменной окружения
-currentsapi_key = os.getenv("CURRENTS_API_KEY")  # Устанавливаем ключ Currents API из переменной окружения
+openai.api_key = os.getenv("OPENAI_API_KEY")
+currentsapi_key = os.getenv("CURRENTS_API_KEY")
 
-# Проверяем, что оба API ключа заданы, иначе выбрасываем ошибку
-if not openai.api_key or not currentsapi_key:
-    raise ValueError("Переменные окружения OPENAI_API_KEY и CURRENTS_API_KEY должны быть установлены")
+# Проверка будет выполняться при запросе, а не при старте
+def check_api_keys():
+    if not openai.api_key or not currentsapi_key:
+        raise HTTPException(
+            status_code=500, 
+            detail="API ключи не настроены. Проверьте переменные окружения."
+        )
 
 class Topic(BaseModel):
     topic: str  # Модель данных для получения темы в запросе
@@ -40,7 +44,8 @@ def get_recent_news(topic: str):
 
 # Функция для генерации контента на основе темы и новостей
 def generate_content(topic: str):
-    recent_news = get_recent_news(topic)  # Получаем последние новости по теме
+    check_api_keys()  # Проверяем ключи перед генерацией
+    recent_news = get_recent_news(topic) # Получаем последние новости по теме
 
     try:
         # Генерация заголовка для статьи
